@@ -1,0 +1,246 @@
+===============================================================================
+                      ROOMZIN BENCHMARK TOOL
+                      =====================
+                       
+              A comprehensive benchmarking suite for
+                     Roomzin & RzGate
+===============================================================================
+
+This guide provides step-by-step instructions for setting up and running
+benchmarks against Roomzin (inventory engine) and RzGate (HTTP/JSON proxy).
+
+===============================================================================
+                          QUICK START
+===============================================================================
+
+Run the setup script to get everything you need:
+
+    curl -sSL https://raw.githubusercontent.com/m-javani/roomzin-bench/main/scripts/setup.sh | bash
+
+This will:
+    - Download rzbench, roomzin, and rzgate binaries
+    - Download all configuration files and scripts
+    - Create the complete benchmark-project/ directory structure
+    - Make all binaries executable
+    - Verify downloads with checksums
+
+===============================================================================
+                      DIRECTORY STRUCTURE
+===============================================================================
+
+After running the setup script, you'll have this structure:
+
+    benchmark-project/
+    ├── config/
+    │   ├── roomzin.yml        # Roomzin server config
+    │   ├── auth.yml           # Authentication tokens
+    │   └── codecs.yml         # Rate features definition
+    ├── data/                  # Generated CSV data
+    ├── queries/
+    │   └── query.yml          # Search query configuration
+    ├── rzgconf/
+    │   ├── rzgate.yml         # RzGate config
+    │   └── auth.yml           # RzGate authentication tokens
+    ├── scripts/
+    ├── snapshots/             # Generated snapshot files
+    ├── roomzin                # Roomzin server binary
+    ├── rzbench                # Benchmark binary
+    └── rzgate                 # RzGate binary
+
+===============================================================================
+                      1. GENERATE TEST DATA
+===============================================================================
+
+Navigate to the benchmark directory and run the data generation script:
+
+    cd benchmark-project
+    ./rzbench generate \
+        --segments 2 \
+        --props-per-segment 2500 \
+        --room-types 10 \
+        --days 60 \
+        --data-dir ./csv
+
+Dataset Size Formula:
+    Properties = segments x props-per-segment
+    Packages = properties x room-types x days
+
+Example (2 x 2,500 x 10 x 60) = 3,000,000 rows
+
+===============================================================================
+                       2. BUILD SNAPSHOT
+===============================================================================
+
+    ./roomzin build-snapshot \
+        --shard-id 1 \
+        --input-path ./csv \
+        --output-path ./data \
+        --codecs ./config/codecs.yml
+
+===============================================================================
+                    3. ROOMZIN SERVER SETUP
+===============================================================================
+
+ROOMZIN STANDALONE MODE
+
+    ./roomzin run \
+        --config ./config/roomzin.yml \
+        --codecs ./config/codecs.yml \
+        --auth-file ./config/auth.yml \
+        --data-dir ./data
+
+Make sure ./config/roomzin.yml has data_dir: "./data"
+
+===============================================================================
+                     4. RZGATE SETUP
+===============================================================================
+
+RzGate runs in standalone mode for single Roomzin instances:
+
+    ./rzgate \
+        --config ./rzgconf/rzgate.yml \
+        --tokens-path ./rzgconf/auth.yml \
+        --http true \
+        --https false \
+        --auth-enabled true \
+        --no-cluster true \
+        --roomzin-standalone-host 127.0.0.1
+
+For detailed RzGate configuration, refer to:
+https://github.com/m-javani/rzgate
+
+===============================================================================
+                      5. RUN BENCHMARKS
+===============================================================================
+
+IMPORTANT: before running the benchmarks, update the date(s) in the queries/query.yml
+
+ROOMZIN (Direct TCP) - Regular Mode
+
+    ./rzbench roomzin regular \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --token abc123 \
+        --connections 1000 \
+        --requests 20000 \
+        --duration 1 \
+        search
+
+    ./rzbench roomzin regular \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --token abc123 \
+        --connections 100 \
+        --requests 1000 \
+        update
+
+ROOMZIN (Direct TCP) - Spike Mode
+
+    ./rzbench roomzin spike \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --token abc123 \
+        --connections 100 \
+        --spike-reqs 500 \
+        search
+
+RZGATE (HTTP/JSON Proxy)
+
+    ./rzbench rzgate \
+        --url http://127.0.0.1:8777 \
+        --token rzgate123 \
+        --connections 200 \
+        --duration 2 \
+        --data-dir ./data \
+        --queries-dir ./queries
+
+===============================================================================
+                    COMMAND REFERENCE
+===============================================================================
+
+Roomzin Benchmark Options
+
+    --data-dir        Directory containing CSV data (default: ./data)
+    --codecs          Path to codecs.yml file
+    -t, --token       Authentication token (required)
+    -c, --connections Number of concurrent connections (default: 50)
+    -n, --requests    Total requests to send (default: 1000)
+    --duration        Benchmark duration in seconds (default: 1)
+    --spike-reqs      Requests per spike (spike mode)
+
+RzGate Benchmark Options
+
+    --url             RzGate endpoint (required)
+    --token           Authentication token (required)
+    --connections     Number of concurrent connections (default: 10)
+    --duration        Benchmark duration in seconds (default: 60)
+    --data-dir        Directory containing query.yml (default: ./data)
+
+===============================================================================
+                     TROUBLESHOOTING
+===============================================================================
+
+"codecs.yml not found"
+
+    Ensure you're using the --codecs flag to point to the correct location:
+    ./rzbench roomzin search --codecs ./config/codecs.yml --data-dir ./data
+
+"Login failed"
+
+    Verify your authentication token matches the one in ./config/auth.yml:
+    
+    tokens:
+      - token: abc123
+        role: client
+
+"Connection refused"
+
+    Make sure Roomzin is running and the port is correct.
+
+"Query validation failed"
+
+    Check that the filters in query.yml match your actual dataset.
+    Verify property IDs exist, room types are valid, and date ranges
+    are within the data window.
+
+"RzGate Connection Issues"
+
+    Ensure:
+    - Roomzin is running
+    - RzGate is started with --no-cluster and --roomzin-standalone-host
+    - The URL in the benchmark command matches your RzGate setup (http://127.0.0.1:8777)
+    - If using auth, ensure the token matches ./rzgconf/auth.yml
+
+===============================================================================
+                   BUILDING FROM SOURCE (Optional)
+===============================================================================
+
+If you prefer to build from source instead of using the pre-built binary:
+
+    git clone https://github.com/m-javani/roomzin-bench
+    cd roomzin-bench
+    cargo build --release
+
+The binary will be at target/release/rzbench.
+
+===============================================================================
+                          SUPPORT
+===============================================================================
+
+For licensing inquiries:
+    mehdy.javany@gmail.com
+
+For documentation and resources:
+    https://m-javani.github.io/roomzin-doc/
+
+===============================================================================
+                         LICENSE
+===============================================================================
+
+This tool is licensed under the Business Source License 1.1.
+See the LICENSE file in the root of this repository for details.
+
+===============================================================================

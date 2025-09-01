@@ -1,0 +1,36 @@
+# // SPDX-License-Identifier: BUSL-1.1
+# // Copyright (c) 2026 M. Javani
+# //
+# // This file is part of roomzin-bench.
+# //
+# // Use of this software is governed by the Business Source License 1.1
+# // included in the LICENSE file in the root of this repository.
+
+search_avail:
+  segment: segment_1
+  room_type: room_1
+  category: test
+  property_type: hotel
+  area: area_1
+  stars: 5
+  amenities:
+    - wifi
+    - pool
+ 
+  final_price: 4000
+  availability: 1
+  rate_features:
+    - free_cancellation
+
+  dates:
+    - "2026-07-15"
+    - "2026-07-17"
+  limit: 300
+
+# ------------------
+set_room_avl:
+   property_id: prop_42
+   room_type: room_1
+   date: "2025-07-17"
+   amount: 5
+  

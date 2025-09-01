@@ -1,0 +1,35 @@
+# // SPDX-License-Identifier: BUSL-1.1
+# // Copyright (c) 2026 M. Javani
+# //
+# // This file is part of roomzin-bench.
+# //
+# // Use of this software is governed by the Business Source License 1.1
+# // included in the LICENSE file in the root of this repository.
+
+core_config:
+  sys_cores_count: 4
+  average_room_types_per_property: 6
+
+tcp:
+  listen_addr: "127.0.0.1"
+  port: 7777
+  max_connections: 10000
+  tcp_user_timeout_ms: 30000
+  tcp_keepalive_seconds: 300
+  tcp_recv_buffer_size: 16384
+  tcp_send_buffer_size: 2097152 #1048576
+
+api_port: 8080
+auth_file: "./auth.yml"
+data_dir: "./data"
+query_limit: 200
+max_dates_in_query: 14
+maintenance_hour: 4
+snapshot_interval_sec: 60
+snapshot_trigger_count: 500
+wal_flush_threshold: 2000
+
+cluster:
+  discovery_kind: "static"
+  discovery_yml_path: "./config/discovery.yml"
+ 

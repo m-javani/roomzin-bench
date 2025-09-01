@@ -1,0 +1,70 @@
+# // SPDX-License-Identifier: BUSL-1.1
+# // Copyright (c) 2026 M. Javani
+# //
+# // This file is part of roomzin-bench.
+# //
+# // Use of this software is governed by the Business Source License 1.1
+# // included in the LICENSE file in the root of this repository.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Build binary
+        run: cargo build --release
+
+      - name: Strip binary
+        run: strip --strip-all target/release/rzbench
+
+      - name: Install UPX
+        run: sudo apt-get update && sudo apt-get install -y upx
+
+      - name: Compress with UPX
+        run: upx --best --lzma target/release/rzbench
+
+      - name: Generate checksum
+        run: |
+          cd target/release
+          sha256sum rzbench > rzbench.sha256
+
+      - name: Package assets
+        run: |
+          mkdir -p package_assets
+          cp -r config package_assets/
+          cp -r queries package_assets/
+          cp -r rzgconf package_assets/
+          cp -r scripts package_assets/
+          cp scripts/benchmark_guide.txt package_assets/
+          cd package_assets
+          tar -czf ../benchmark-assets-${{ github.ref_name }}.tar.gz .
+          cd ..
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            target/release/rzbench
+            target/release/rzbench.sha256
+            benchmark-assets-${{ github.ref_name }}.tar.gz
+          generate_release_notes: true
+          name: ${{ github.ref_name }}
