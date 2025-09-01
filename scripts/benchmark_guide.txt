@@ -1,0 +1,147 @@
+===============================================================================
+                      ROOMZIN BENCHMARK TOOL
+                      =====================
+                      
+              A comprehensive benchmarking suite for
+                     Roomzin & RzProxy
+===============================================================================
+
+This guide provides step-by-step instructions for setting up and running
+benchmarks against Roomzin (inventory engine) and RzProxy (HTTP/JSON proxy).
+
+===============================================================================
+                      1. GENERATE TEST DATA
+===============================================================================
+
+Navigate to the benchmark directory and generate the CSV dataset:
+
+    cd benchmark-project
+
+    ./rzbench generate \
+        --segments 2 \
+        --props-per-segment 2500 \
+        --room-types 10 \
+        --days 60 \
+        --data-dir ./csv
+
+Dataset Size Formula:
+    Properties = segments × props-per-segment
+    Packages   = properties × room-types × days
+
+Example (2 × 2 500 × 10 × 60) = 3 000 000 package rows
+
+You can also point the tool at real customer CSVs later; just place
+properties.csv and packages.csv in ./csv directory.
+
+===============================================================================
+                   2. GENERATE BENCHMARK QUERIES
+===============================================================================
+
+After the CSVs exist, generate realistic search and update queries:
+
+    ./rzbench gen-queries \
+        --csv-dir ./csv \
+        --queries-dir ./queries \
+        --limit 300 \
+        --query-per-key 2
+
+This produces:
+
+    queries/query.yml     # multiple search queries (one per segment/room_type)
+    queries/update.yml    # one realistic update target
+
+The generator:
+    - Streams packages.csv twice (discover + exact expected_count)
+    - Selects lowest-hash properties per (segment, room_type)
+    - Builds consecutive available stays
+    - Writes deterministic, server-compatible queries
+
+Note: limit is the max records returned in each response
+
+===============================================================================
+                       3. BUILD SNAPSHOT
+===============================================================================
+
+    cp ./config/codecs.yml ./csv/codecs.yml
+
+    ./roomzin build-snapshot \
+        --shard-id 1 \
+        --input-path ./csv \
+        --output-path ./data
+
+===============================================================================
+                    4. ROOMZIN SERVER SETUP
+===============================================================================
+
+ROOMZIN STANDALONE MODE
+
+    ./roomzin run \
+        --config ./config/roomzin.yml \
+        --codecs ./config/codecs.yml \
+        --data-dir ./data
+
+
+===============================================================================
+                     5. RzProxy SETUP
+===============================================================================
+
+RzProxy runs in standalone mode for a single Roomzin instance:
+
+    ./rzproxy --listening-addr 127.0.0.1
+
+For detailed RzProxy configuration see:
+https://github.com/m-javani/rzproxy
+
+===============================================================================
+                      6. RUN BENCHMARKS
+===============================================================================
+
+ROOMZIN (Direct TCP) – Regular Mode
+
+    # Search
+    ./rzbench roomzin regular \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --connections 1000 \
+        --requests 20000 \
+        --duration 1 \
+        search
+
+    # Update
+    ./rzbench roomzin regular \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --connections 100 \
+        --requests 1000 \
+        update
+
+ROOMZIN (Direct TCP) – Spike Mode
+
+    ./rzbench roomzin spike \
+        --data-dir ./data \
+        --queries-dir ./queries \
+        --codecs ./config/codecs.yml \
+        --connections 100 \
+        --spike-reqs 500 \
+        search
+
+RzProxy (HTTP/JSON Proxy)
+
+    ./rzbench rzproxy \
+        --url http://127.0.0.1:8777 \
+        --connections 200 \
+        --duration 2 \
+        --data-dir ./data \
+        --queries-dir ./queries
+
+===============================================================================
+                   BUILDING FROM SOURCE (Optional)
+===============================================================================
+
+    git clone https://github.com/m-javani/roomzin-bench
+    cd roomzin-bench
+    cargo build --release
+
+Binary location: target/release/rzbench

@@ -1,0 +1,14 @@
+/target
+*.pcap
+*.json
+
+
+/rzbench
+/data
+roomzin
+rzproxy
+/roomzin
+snapshots
+snapshots/*
+benchmark-project
+*.tar.gz

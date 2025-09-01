@@ -1,0 +1,93 @@
+# // SPDX-License-Identifier: BUSL-1.1
+# // Copyright (c) 2026 M. Javani
+# //
+# // This file is part of roomzin-bench.
+# //
+# // Use of this software is governed by the Business Source License 1.1
+# // included in the LICENSE file in the root of this repository.
+
+
+# ========== Core Settings ==========
+# Number of cores reserved for system tasks.
+# 0 = auto-detect (recommended, ~50% of available cores)
+# (optional, default: 0)
+sys_cores_count: 0
+
+# Average number of room types per property.
+# Used for internal resource allocation.
+# (optional, default: 6)
+avg_room_types_per_property: 6
+
+# ========== TCP Settings ==========
+# TCP port for client connections
+# (optional, default: 7777)
+tcp_port: 7777
+
+# Maximum concurrent TCP connections
+# (optional, default: 10000)
+tcp_max_connections: 10000
+
+# TCP user timeout in milliseconds
+# (optional, default: 200)
+tcp_user_timeout_ms: 200
+
+# TCP keepalive interval in seconds
+# (optional, default: 30)
+tcp_keepalive_seconds: 30
+
+# TCP receive buffer size in bytes
+# (optional, default: 262144)
+tcp_recv_buffer_size: 262144
+
+# TCP send buffer size in bytes
+# (optional, default: 131072)
+tcp_send_buffer_size: 131072
+
+# ========== Cluster Settings ==========
+# Port for cluster communication (Raft/RPC)
+# (optional, default: 17777)
+quic_port: 17777
+
+# Raft tick interval in milliseconds
+# (optional, default: 30)
+raft_tick_ms: 30
+
+# Raft election timeout in ticks
+# (optional, default: 60)
+raft_election_tick: 60
+
+# Raft heartbeat interval in ticks
+# (optional, default: 15)
+raft_heartbeat_tick: 15
+
+# RzID heartbeat interval in seconds
+rzid_heartbeat_secs: 5
+
+# ========== Server Settings ==========
+# API port for HTTP endpoints
+# (optional, default: 8080)
+api_port: 8080
+
+# Hour of day for maintenance tasks (0-23)
+# (optional, default: 0)
+maintenance_hour: 3
+
+# Maximum number of dates allowed in a single query
+# (optional, default: 14)
+max_dates_in_query: 14
+
+# Maximum number of results per query
+# (optional, default: 200)
+query_limit: 200
+
+# Snapshot creation interval in seconds
+# (optional, default: 60)
+snapshot_interval_sec: 60
+
+# Number of WAL entries before triggering snapshot
+# (optional, default: 10000)
+snapshot_trigger_count: 10000
+
+# WAL flush threshold (number of entries)
+# (optional, default: 2000)
+wal_flush_threshold: 2000
