@@ -55,7 +55,7 @@ download() {
 }
 
 # Download assets
-download "https://github.com/m-javani/roomzin-bench/releases/download/latest/benchmark-assets.tar.gz" "assets.tar.gz"
+download "https://github.com/m-javani/roomzin-bench/releases/latest/download/benchmark-assets.tar.gz" "assets.tar.gz"
 
 # Extract assets
 echo -e "${YELLOW}Extracting assets...${NC}"
@@ -64,9 +64,9 @@ rm assets.tar.gz
 echo -e "${GREEN}✓ Extracted assets${NC}"
 
 # Download binaries
-download "https://github.com/m-javani/roomzin-bench/releases/download/latest/rzbench" "rzbench"
-download "https://github.com/m-javani/roomzin-doc/releases/download/latest/roomzin" "roomzin"
-download "https://github.com/m-javani/rzproxy/releases/download/latest/rzproxy" "rzproxy"
+download "https://github.com/m-javani/roomzin-bench/releases/latest/download/rzbench" "rzbench"
+download "https://github.com/m-javani/roomzin-doc/releases/latest/download/roomzin" "roomzin"
+download "https://github.com/m-javani/rzproxy/releases/latest/download/rzproxy" "rzproxy"
 
 echo -e "${GREEN}===============================================================================${NC}"
 echo -e "${GREEN}✓ Setup complete!${NC}"
